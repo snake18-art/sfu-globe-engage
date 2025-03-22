@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, User, Settings, Bell } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, User, Bell, Gamepad, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +17,26 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Study', path: '/study' },
+    { name: 'Clubs', path: '/clubs' },
+    { name: 'Quizzes', path: '/quizzes' },
+    { name: 'Leaderboard', path: '/leaderboard' },
+    { name: 'Games', path: '/games' },
+    { name: 'Attendance', path: '/attendance' },
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <header 
@@ -42,18 +63,20 @@ const Header: React.FC = () => {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-8">
-          {['home', 'study', 'clubs', 'quizzes', 'leaderboard'].map((item) => (
+        <nav className="hidden md:flex items-center space-x-6">
+          {navItems.map(item => (
             <Link
-              key={item}
-              to={item === 'home' ? '/' : `/${item}`}
+              key={item.path}
+              to={item.path}
               className={cn(
                 "text-sm font-medium transition-all duration-200 hover:text-sfu-red relative",
                 isScrolled ? "text-sfu-black" : "text-sfu-black",
-                "after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-sfu-red after:left-0 after:-bottom-1 after:transition-all after:duration-300 hover:after:w-full"
+                isActive(item.path) ? "text-sfu-red" : "",
+                "after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-sfu-red after:left-0 after:-bottom-1 after:transition-all after:duration-300 hover:after:w-full",
+                isActive(item.path) ? "after:w-full" : ""
               )}
             >
-              {item.charAt(0).toUpperCase() + item.slice(1)}
+              {item.name}
             </Link>
           ))}
         </nav>
@@ -84,16 +107,43 @@ const Header: React.FC = () => {
         isMenuOpen ? "translate-x-0" : "translate-x-full"
       )}>
         <nav className="flex flex-col space-y-6 items-center">
-          {['home', 'study', 'clubs', 'quizzes', 'leaderboard', 'profile'].map((item) => (
+          {navItems.map(item => (
             <Link
-              key={item}
-              to={item === 'home' ? '/' : `/${item}`}
-              className="text-lg font-medium text-sfu-black hover:text-sfu-red transition-all duration-200"
-              onClick={() => setIsMenuOpen(false)}
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "text-lg font-medium transition-all duration-200",
+                isActive(item.path) ? "text-sfu-red" : "text-sfu-black hover:text-sfu-red"
+              )}
             >
-              {item.charAt(0).toUpperCase() + item.slice(1)}
+              {item.name}
             </Link>
           ))}
+          <div className="pt-6 border-t border-gray-100 w-full flex justify-center space-x-4">
+            <Link 
+              to="/games" 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <Gamepad size={20} />
+            </Link>
+            <Link 
+              to="/attendance" 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <CalendarCheck size={20} />
+            </Link>
+            <button 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <Bell size={20} />
+            </button>
+            <Link 
+              to="/profile" 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <User size={20} />
+            </Link>
+          </div>
         </nav>
       </div>
     </header>

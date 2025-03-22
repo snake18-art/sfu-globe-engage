@@ -25,7 +25,6 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         className
       )}
       style={{ 
-        animationDelay: `${delay * 100}ms`,
         opacity: 0,
         animation: 'fadeIn 0.5s ease-out forwards',
         animationDelay: `${delay * 0.1}s`

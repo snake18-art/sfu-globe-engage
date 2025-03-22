@@ -1,27 +1,34 @@
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import Index from '@/pages/Index';
+import Study from '@/pages/Study';
+import Clubs from '@/pages/Clubs';
+import Quizzes from '@/pages/Quizzes';
+import Leaderboard from '@/pages/Leaderboard';
+import MinorGames from '@/pages/MinorGames';
+import Attendance from '@/pages/Attendance';
+import NotFound from '@/pages/NotFound';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <Router>
+      <div className="app">
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/study" element={<Study />} />
+          <Route path="/clubs" element={<Clubs />} />
+          <Route path="/quizzes" element={<Quizzes />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/games" element={<MinorGames />} />
+          <Route path="/attendance" element={<Attendance />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        <Toaster />
+      </div>
+    </Router>
+  );
+}
 
 export default App;
