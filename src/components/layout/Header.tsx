@@ -1,13 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Bell, Gamepad, CalendarCheck } from 'lucide-react';
+import { Menu, X, User, Bell, Gamepad, CalendarCheck, ShoppingBag, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +34,8 @@ const Header: React.FC = () => {
     { name: 'Leaderboard', path: '/leaderboard' },
     { name: 'Games', path: '/games' },
     { name: 'Attendance', path: '/attendance' },
+    { name: 'Marketplace', path: '/marketplace' },
+    { name: 'Newsfeed', path: '/newsfeed' },
   ];
 
   const isActive = (path: string) => {
@@ -85,12 +90,24 @@ const Header: React.FC = () => {
           <button className="w-9 h-9 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200">
             <Bell size={20} />
           </button>
-          <Link 
-            to="/profile" 
-            className="w-9 h-9 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
-          >
-            <User size={20} />
-          </Link>
+          
+          {isAuthenticated ? (
+            <Link to="/profile">
+              <Avatar className="h-9 w-9 border-2 border-white hover:border-sfu-red transition-colors">
+                <AvatarImage src={user?.profilePic} />
+                <AvatarFallback className="bg-sfu-red text-white">
+                  {user?.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Link 
+              to="/login" 
+              className="px-4 py-2 rounded-lg bg-sfu-red text-white text-sm font-medium hover:bg-sfu-red/90 transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
 
         <button 
@@ -119,7 +136,37 @@ const Header: React.FC = () => {
               {item.name}
             </Link>
           ))}
+          
+          {!isAuthenticated && (
+            <>
+              <Link
+                to="/login"
+                className="text-lg font-medium text-sfu-black hover:text-sfu-red transition-all duration-200"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="text-lg font-medium text-sfu-black hover:text-sfu-red transition-all duration-200"
+              >
+                Register
+              </Link>
+            </>
+          )}
+          
           <div className="pt-6 border-t border-gray-100 w-full flex justify-center space-x-4">
+            <Link 
+              to="/marketplace" 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <ShoppingBag size={20} />
+            </Link>
+            <Link 
+              to="/newsfeed" 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+            >
+              <Radio size={20} />
+            </Link>
             <Link 
               to="/games" 
               className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
@@ -137,12 +184,14 @@ const Header: React.FC = () => {
             >
               <Bell size={20} />
             </button>
-            <Link 
-              to="/profile" 
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
-            >
-              <User size={20} />
-            </Link>
+            {isAuthenticated ? (
+              <Link 
+                to="/profile" 
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-sfu-lightgray text-sfu-black hover:bg-sfu-lightgray/80 transition-all duration-200"
+              >
+                <User size={20} />
+              </Link>
+            ) : null}
           </div>
         </nav>
       </div>
