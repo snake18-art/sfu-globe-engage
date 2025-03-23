@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch, UserPlus } from "lucide-react";
+import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch, UserPlus, UserCheck, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +16,19 @@ import {
   CardHeader,
   CardTitle 
 } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Study = () => {
   const [studentIdLookup, setStudentIdLookup] = useState("");
   const [matchedStudents, setMatchedStudents] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [connections, setConnections] = useState<string[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<string[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [messages, setMessages] = useState<{[key: string]: {text: string, sender: string, timestamp: Date}[]}>({});
+  const [showMessaging, setShowMessaging] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -96,6 +103,45 @@ const Study = () => {
     { id: 3, subject: "Physics Lab Prep", date: "Oct 20, 4:30 PM", location: "SSC 7172", participants: 4 },
   ];
 
+  // Load connections from localStorage on component mount
+  useEffect(() => {
+    const savedConnections = localStorage.getItem("connections");
+    if (savedConnections) {
+      setConnections(JSON.parse(savedConnections));
+    }
+    
+    const savedPendingRequests = localStorage.getItem("pendingRequests");
+    if (savedPendingRequests) {
+      setPendingRequests(JSON.parse(savedPendingRequests));
+    }
+    
+    const savedMessages = localStorage.getItem("messages");
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+  }, []);
+
+  // Save connections to localStorage whenever they change
+  useEffect(() => {
+    if (connections.length > 0) {
+      localStorage.setItem("connections", JSON.stringify(connections));
+    }
+  }, [connections]);
+  
+  // Save pending requests to localStorage whenever they change
+  useEffect(() => {
+    if (pendingRequests.length > 0) {
+      localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
+    }
+  }, [pendingRequests]);
+  
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(messages).length > 0) {
+      localStorage.setItem("messages", JSON.stringify(messages));
+    }
+  }, [messages]);
+
   const findStudentById = () => {
     if (!studentIdLookup.trim()) {
       toast({
@@ -108,6 +154,7 @@ const Study = () => {
 
     setIsSearching(true);
     setSelectedStudent(null);
+    setShowMessaging(false);
     
     // Search for students matching the ID
     setTimeout(() => {
@@ -134,6 +181,118 @@ const Study = () => {
 
   const viewStudentProfile = (student: any) => {
     setSelectedStudent(student);
+    setShowMessaging(false);
+  };
+  
+  const sendConnectionRequest = (studentId: string) => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to connect with other students",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // In a real app, this would send a request to the backend
+    // For demo purposes, we'll just add it to pendingRequests
+    setPendingRequests(prev => [...prev, studentId]);
+    
+    toast({
+      title: "Connection request sent",
+      description: `Your connection request has been sent to student ID: ${studentId}`,
+    });
+    
+    // For demo purposes, auto-accept after 2 seconds
+    setTimeout(() => {
+      acceptConnection(studentId);
+    }, 2000);
+  };
+  
+  const acceptConnection = (studentId: string) => {
+    // Add to connections list
+    setConnections(prev => [...prev, studentId]);
+    // Remove from pending requests
+    setPendingRequests(prev => prev.filter(id => id !== studentId));
+    
+    toast({
+      title: "Connection accepted",
+      description: `You are now connected with student ID: ${studentId}`,
+    });
+  };
+  
+  const removeConnection = (studentId: string) => {
+    setConnections(prev => prev.filter(id => id !== studentId));
+    
+    toast({
+      title: "Connection removed",
+      description: `You have removed the connection with student ID: ${studentId}`,
+    });
+  };
+  
+  const openMessaging = (student: any) => {
+    setSelectedStudent(student);
+    setShowMessaging(true);
+    
+    // Initialize messages array if it doesn't exist
+    if (!messages[student.studentId]) {
+      setMessages(prev => ({ ...prev, [student.studentId]: [] }));
+    }
+  };
+  
+  const sendMessage = () => {
+    if (!messageText.trim() || !selectedStudent) return;
+    
+    const newMessage = {
+      text: messageText,
+      sender: "me",
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => ({
+      ...prev,
+      [selectedStudent.studentId]: [...(prev[selectedStudent.studentId] || []), newMessage]
+    }));
+    
+    setMessageText("");
+    
+    // Simulate a reply after 2 seconds
+    setTimeout(() => {
+      const replies = [
+        "Sure, that works for me!",
+        "When would you like to meet?",
+        "Thanks for reaching out!",
+        "I'm also studying for that exam.",
+        "Let's meet at the library.",
+        "I have class until 3pm, can we meet after?",
+        "That's a great idea!",
+      ];
+      
+      const randomReply = replies[Math.floor(Math.random() * replies.length)];
+      
+      const replyMessage = {
+        text: randomReply,
+        sender: selectedStudent.studentId,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => ({
+        ...prev,
+        [selectedStudent.studentId]: [...(prev[selectedStudent.studentId] || []), replyMessage]
+      }));
+    }, 2000);
+  };
+  
+  const isConnected = (studentId: string) => {
+    return connections.includes(studentId);
+  };
+  
+  const isPendingConnection = (studentId: string) => {
+    return pendingRequests.includes(studentId);
+  };
+
+  const formatTime = (date: Date) => {
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -196,6 +355,49 @@ const Study = () => {
                 </div>
               )}
               
+              {connections.length > 0 && (
+                <div className="mb-4 p-3 bg-white rounded-lg">
+                  <h3 className="font-medium text-sm mb-2">Your Connections ({connections.length})</h3>
+                  <div className="space-y-2">
+                    {connections.map(studentId => {
+                      const student = allStudentsData.find(s => s.studentId === studentId);
+                      if (!student) return null;
+                      
+                      return (
+                        <div key={student.id} className="flex items-center justify-between text-sm p-2 hover:bg-gray-50 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-8 h-8">
+                              <AvatarFallback className="bg-blue-100 text-blue-600">
+                                {student.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{student.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => openMessaging(student)}
+                            >
+                              <MessageCircle size={16} />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-red-500"
+                              onClick={() => removeConnection(student.studentId)}
+                            >
+                              <X size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3 mt-6">
                 <h3 className="font-medium text-sm uppercase text-gray-500">
                   {matchedStudents.length > 0 ? "Matched Students" : "Find students to display results"}
@@ -223,14 +425,40 @@ const Study = () => {
                       <div className="flex flex-col items-end">
                         <span className="text-xs font-medium text-sfu-red">{student.course}</span>
                         <span className="text-xs text-gray-500">{student.studentId}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-xs text-blue-500 mt-1 p-0 h-auto"
-                          onClick={() => viewStudentProfile(student)}
-                        >
-                          View Profile
-                        </Button>
+                        <div className="flex gap-2 mt-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs p-0 h-auto text-blue-500"
+                            onClick={() => viewStudentProfile(student)}
+                          >
+                            View Profile
+                          </Button>
+                          
+                          {isConnected(student.studentId) ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-xs p-0 h-auto text-green-600 flex items-center gap-1"
+                              onClick={() => openMessaging(student)}
+                            >
+                              <MessageCircle size={12} />
+                              Message
+                            </Button>
+                          ) : isPendingConnection(student.studentId) ? (
+                            <span className="text-xs text-orange-500">Request Sent</span>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-xs p-0 h-auto text-indigo-600 flex items-center gap-1"
+                              onClick={() => sendConnectionRequest(student.studentId)}
+                            >
+                              <UserPlus size={12} />
+                              Connect
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -242,9 +470,80 @@ const Study = () => {
               </div>
             </div>
             
-            {/* Right Side: Student Profile or Upcoming Sessions */}
+            {/* Right Side: Student Profile, Messaging or Upcoming Sessions */}
             <div className="bg-sfu-lightgray p-6 rounded-xl">
-              {selectedStudent ? (
+              {showMessaging && selectedStudent ? (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10 border border-gray-200">
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {selectedStudent.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h2 className="font-display font-semibold">{selectedStudent.name}</h2>
+                        <div className="text-xs text-gray-500">{selectedStudent.course} • {selectedStudent.major}</div>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowMessaging(false)}
+                    >
+                      Back
+                    </Button>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg h-80 overflow-y-auto mb-4 p-4">
+                    <div className="space-y-3">
+                      {messages[selectedStudent.studentId]?.length > 0 ? (
+                        messages[selectedStudent.studentId].map((msg, index) => (
+                          <div 
+                            key={index} 
+                            className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div 
+                              className={`max-w-[70%] px-3 py-2 rounded-lg ${
+                                msg.sender === 'me' 
+                                  ? 'bg-blue-500 text-white rounded-br-none' 
+                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                              }`}
+                            >
+                              <p className="text-sm">{msg.text}</p>
+                              <p className={`text-xs mt-1 ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-500'}`}>
+                                {formatTime(msg.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-gray-500 py-10">
+                          <p>No messages yet</p>
+                          <p className="text-xs mt-2">Send a message to start the conversation</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input 
+                      type="text" 
+                      placeholder="Type your message..." 
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                      className="bg-white"
+                    />
+                    <Button 
+                      variant="message"
+                      onClick={sendMessage}
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              ) : selectedStudent ? (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-display font-semibold">Student Profile</h2>
@@ -300,10 +599,33 @@ const Study = () => {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button className="w-full gap-2">
-                        <UserPlus size={16} />
-                        Connect with {selectedStudent.name.split(' ')[0]}
-                      </Button>
+                      {isConnected(selectedStudent.studentId) ? (
+                        <Button 
+                          variant="connected" 
+                          className="w-full gap-2"
+                          onClick={() => openMessaging(selectedStudent)}
+                        >
+                          <MessageCircle size={16} />
+                          Message {selectedStudent.name.split(' ')[0]}
+                        </Button>
+                      ) : isPendingConnection(selectedStudent.studentId) ? (
+                        <Button 
+                          disabled 
+                          className="w-full gap-2 opacity-60"
+                        >
+                          <UserCheck size={16} />
+                          Connection Request Sent
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="connect" 
+                          className="w-full gap-2"
+                          onClick={() => sendConnectionRequest(selectedStudent.studentId)}
+                        >
+                          <UserPlus size={16} />
+                          Connect with {selectedStudent.name.split(' ')[0]}
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>
                 </div>
