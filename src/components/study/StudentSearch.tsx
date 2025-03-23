@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { UserSearch, MessageCircle, X } from "lucide-react";
+import { UserSearch, MessageCircle, X, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { allStudentsData } from "@/data/StudyData";
 
 interface StudentSearchProps {
   studentIdLookup: string;
@@ -204,7 +204,6 @@ const StudentSearch: React.FC<StudentSearchProps> = ({
 
 export default StudentSearch;
 
-// This data will move to the StudyData.ts file
 const allStudentsData = [
   { 
     id: 1, 

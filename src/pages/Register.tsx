@@ -44,7 +44,16 @@ const Register = () => {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    registerUser(values);
+    // Ensure all required fields are present before registering
+    const userData = {
+      name: values.name,
+      email: values.email,
+      password: values.password,
+      studentId: values.studentId,
+      major: values.major,
+      batch: values.batch
+    };
+    registerUser(userData as any);
   }
 
   return (
@@ -209,3 +218,4 @@ const Register = () => {
 };
 
 export default Register;
+
