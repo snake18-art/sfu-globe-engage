@@ -2,34 +2,91 @@
 import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch } from "lucide-react";
+import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle 
+} from "@/components/ui/card";
 
 const Study = () => {
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [nearbyStudents, setNearbyStudents] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [studentIdLookup, setStudentIdLookup] = useState("");
   const [matchedStudents, setMatchedStudents] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Sample data for all students
+  // Sample data for specific students with the IDs provided
   const allStudentsData = [
-    { id: 1, name: "Alex Chen", studentId: "A12345", course: "CMPT 120", major: "Computer Science", batch: "2022", avatar: "" },
-    { id: 2, name: "Morgan Liu", studentId: "A12346", course: "CMPT 225", major: "Computer Science", batch: "2021", avatar: "" },
-    { id: 3, name: "Jessica Wong", studentId: "A12347", course: "MATH 151", major: "Mathematics", batch: "2022", avatar: "" },
-    { id: 4, name: "David Kim", studentId: "A12348", course: "BUS 272", major: "Business", batch: "2023", avatar: "" },
-    { id: 5, name: "Sarah Johnson", studentId: "A12349", course: "CHEM 121", major: "Chemistry", batch: "2022", avatar: "" },
-    { id: 6, name: "Michael Park", studentId: "A12350", course: "PHYS 101", major: "Physics", batch: "2021", avatar: "" },
-    { id: 7, name: "Emma Wilson", studentId: "A12351", course: "BISC 100", major: "Biology", batch: "2023", avatar: "" },
-    { id: 8, name: "James Lee", studentId: "A12352", course: "PSYC 100", major: "Psychology", batch: "2022", avatar: "" },
-    { id: 9, name: "Olivia Martinez", studentId: "A12353", course: "ENGL 101", major: "English", batch: "2021", avatar: "" },
-    { id: 10, name: "Noah Brown", studentId: "A12354", course: "ECON 103", major: "Economics", batch: "2023", avatar: "" },
+    { 
+      id: 1, 
+      name: "Arya Pratama", 
+      studentId: "2024D5963", 
+      course: "CMPT 120", 
+      major: "Computer Science", 
+      batch: "2024", 
+      avatar: "", 
+      bio: "Passionate about AI and Machine Learning. Looking for study partners for algorithm practice.",
+      interests: ["Programming", "Artificial Intelligence", "Data Science"],
+      availability: "Weekdays after 4 PM"
+    },
+    { 
+      id: 2, 
+      name: "Maya Wijaya", 
+      studentId: "2024D5962", 
+      course: "CMPT 225", 
+      major: "Computer Science", 
+      batch: "2024", 
+      avatar: "", 
+      bio: "Interested in web development and UX design. Currently working on a portfolio website project.",
+      interests: ["Web Development", "UI/UX Design", "JavaScript"],
+      availability: "Tuesdays and Thursdays"
+    },
+    { 
+      id: 3, 
+      name: "Budi Santoso", 
+      studentId: "2024D5899", 
+      course: "MATH 151", 
+      major: "Mathematics", 
+      batch: "2024", 
+      avatar: "", 
+      bio: "Math enthusiast focusing on calculus and statistics. Would love to join a study group.",
+      interests: ["Calculus", "Statistics", "Problem Solving"],
+      availability: "Weekends and Wednesday evenings"
+    },
+    { 
+      id: 4, 
+      name: "Dewi Sari", 
+      studentId: "2024D5965", 
+      course: "BUS 272", 
+      major: "Business Administration", 
+      batch: "2024", 
+      avatar: "", 
+      bio: "Studying business with a focus on international marketing. Looking for case study partners.",
+      interests: ["Marketing", "Business Strategy", "Global Markets"],
+      availability: "Monday, Wednesday, Friday afternoons"
+    },
+    { 
+      id: 5, 
+      name: "Reza Gunawan", 
+      studentId: "2024D5978", 
+      course: "PHYS 101", 
+      major: "Physics", 
+      batch: "2024", 
+      avatar: "", 
+      bio: "First-year physics student interested in theoretical physics. Seeking study partners for weekly sessions.",
+      interests: ["Physics", "Mathematics", "Research"],
+      availability: "Evenings and weekends"
+    },
   ];
 
   // Study sessions data
@@ -50,8 +107,9 @@ const Study = () => {
     }
 
     setIsSearching(true);
+    setSelectedStudent(null);
     
-    // Simulate API call with timeout
+    // Search for students matching the ID
     setTimeout(() => {
       const results = allStudentsData.filter(student => 
         student.studentId.toLowerCase().includes(studentIdLookup.toLowerCase())
@@ -71,42 +129,11 @@ const Study = () => {
           description: `Found ${results.length} student(s) matching your search`,
         });
       }
-    }, 1000);
+    }, 800);
   };
 
-  // Legacy location-based function
-  const getLocation = () => {
-    setIsLoading(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          // Simulate fetching nearby students
-          setTimeout(() => {
-            setNearbyStudents(allStudentsData.slice(0, 5));
-            setIsLoading(false);
-          }, 1500);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setIsLoading(false);
-          // Simulate fetching nearby students even if location fails
-          setTimeout(() => {
-            setNearbyStudents(allStudentsData.slice(0, 5));
-          }, 1500);
-        }
-      );
-    } else {
-      console.error("Geolocation is not supported by this browser.");
-      setIsLoading(false);
-      // Simulate fetching nearby students even if geolocation is not supported
-      setTimeout(() => {
-        setNearbyStudents(allStudentsData.slice(0, 5));
-      }, 1500);
-    }
+  const viewStudentProfile = (student: any) => {
+    setSelectedStudent(student);
   };
 
   return (
@@ -123,7 +150,7 @@ const Study = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Student ID Finder - New Section */}
+            {/* Student ID Finder - Enhanced */}
             <div className="bg-sfu-lightgray p-6 rounded-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
@@ -140,7 +167,7 @@ const Study = () => {
                 <div className="flex-grow">
                   <Input 
                     type="text" 
-                    placeholder="Enter student ID (e.g., A12345)" 
+                    placeholder="Try: 2024D5963, 2024D5962, etc." 
                     value={studentIdLookup}
                     onChange={(e) => setStudentIdLookup(e.target.value)}
                     className="bg-white"
@@ -183,9 +210,11 @@ const Study = () => {
                   matchedStudents.map(student => (
                     <div key={student.id} className="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-sm transition-all duration-200">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          {student.name.charAt(0)}
-                        </div>
+                        <Avatar className="w-10 h-10 border border-gray-200">
+                          <AvatarFallback className="bg-sfu-red/10 text-sfu-red">
+                            {student.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <div className="font-medium">{student.name}</div>
                           <div className="text-xs text-gray-500">{student.major} - {student.batch}</div>
@@ -194,7 +223,14 @@ const Study = () => {
                       <div className="flex flex-col items-end">
                         <span className="text-xs font-medium text-sfu-red">{student.course}</span>
                         <span className="text-xs text-gray-500">{student.studentId}</span>
-                        <button className="text-xs text-blue-500 hover:underline mt-1">Connect</button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs text-blue-500 mt-1 p-0 h-auto"
+                          onClick={() => viewStudentProfile(student)}
+                        >
+                          View Profile
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -206,58 +242,125 @@ const Study = () => {
               </div>
             </div>
             
-            {/* Upcoming Study Sessions */}
+            {/* Right Side: Student Profile or Upcoming Sessions */}
             <div className="bg-sfu-lightgray p-6 rounded-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
-                  <Calendar size={20} />
-                </div>
-                <h2 className="text-xl font-display font-semibold">Upcoming Study Sessions</h2>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                {upcomingSessions.map(session => (
-                  <div key={session.id} className="bg-white p-4 rounded-lg hover:shadow-sm transition-all duration-200">
-                    <h3 className="font-medium mb-2">{session.subject}</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock size={16} />
-                        <span>{session.date}</span>
+              {selectedStudent ? (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-display font-semibold">Student Profile</h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedStudent(null)}
+                    >
+                      Back to Sessions
+                    </Button>
+                  </div>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-16 h-16 border border-gray-200">
+                          <AvatarFallback className="bg-sfu-red/10 text-sfu-red text-lg">
+                            {selectedStudent.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle>{selectedStudent.name}</CardTitle>
+                          <CardDescription className="flex flex-col gap-1 mt-1">
+                            <span className="text-sfu-red font-medium">{selectedStudent.studentId}</span>
+                            <span>{selectedStudent.major} - {selectedStudent.batch}</span>
+                            <span>Current Course: {selectedStudent.course}</span>
+                          </CardDescription>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin size={16} />
-                        <span>{session.location}</span>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">About</h3>
+                          <p className="text-sm text-gray-600">{selectedStudent.bio}</p>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Study Interests</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedStudent.interests.map((interest: string, index: number) => (
+                              <span key={index} className="text-xs bg-sfu-red/10 text-sfu-red px-2 py-1 rounded-full">
+                                {interest}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Availability</h3>
+                          <p className="text-sm text-gray-600">{selectedStudent.availability}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full gap-2">
+                        <UserPlus size={16} />
+                        Connect with {selectedStudent.name.split(' ')[0]}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
+                      <Calendar size={20} />
+                    </div>
+                    <h2 className="text-xl font-display font-semibold">Upcoming Study Sessions</h2>
+                  </div>
+                  
+                  <div className="space-y-4 mb-6">
+                    {upcomingSessions.map(session => (
+                      <div key={session.id} className="bg-white p-4 rounded-lg hover:shadow-sm transition-all duration-200">
+                        <h3 className="font-medium mb-2">{session.subject}</h3>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Clock size={16} />
+                            <span>{session.date}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <MapPin size={16} />
+                            <span>{session.location}</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-between items-center">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Users size={14} />
+                            <span>{session.participants} participants</span>
+                          </div>
+                          <Button variant="outline" size="sm" className="text-xs">Join Session</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button className="w-full bg-white text-sfu-red hover:bg-gray-50 border border-sfu-red/20">
+                    Create Study Session
+                  </Button>
+                  
+                  <div className="mt-6 p-4 bg-sfu-red/10 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-sfu-red/20 text-sfu-red flex items-center justify-center flex-shrink-0">
+                        <BookOpen size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-sm mb-1">Study Partner Matching</h3>
+                        <p className="text-xs text-gray-600 mb-2">
+                          Our AI-powered system can match you with compatible study partners based on your courses, learning style, and schedule.
+                        </p>
+                        <Button variant="outline" size="sm" className="text-xs w-full justify-center">Find My Perfect Match</Button>
                       </div>
                     </div>
-                    <div className="mt-3 flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Users size={14} />
-                        <span>{session.participants} participants</span>
-                      </div>
-                      <Button variant="outline" size="sm" className="text-xs">Join Session</Button>
-                    </div>
                   </div>
-                ))}
-              </div>
-              
-              <Button className="w-full bg-white text-sfu-red hover:bg-gray-50 border border-sfu-red/20">
-                Create Study Session
-              </Button>
-              
-              <div className="mt-6 p-4 bg-sfu-red/10 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-sfu-red/20 text-sfu-red flex items-center justify-center flex-shrink-0">
-                    <BookOpen size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-sm mb-1">Study Partner Matching</h3>
-                    <p className="text-xs text-gray-600 mb-2">
-                      Our AI-powered system can match you with compatible study partners based on your courses, learning style, and schedule.
-                    </p>
-                    <Button variant="outline" size="sm" className="text-xs w-full justify-center">Find My Perfect Match</Button>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
