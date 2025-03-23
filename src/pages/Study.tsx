@@ -2,22 +2,18 @@
 import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch, UserPlus, UserCheck, MessageCircle, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle 
-} from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { UserPlus } from "lucide-react";
+
+// Import components
+import StudentSearch from "@/components/study/StudentSearch";
+import StudentProfile from "@/components/study/StudentProfile";
+import MessagingPanel from "@/components/study/MessagingPanel";
+import StudySessions from "@/components/study/StudySessions";
+
+// Import data
+import { allStudentsData, upcomingSessions } from "@/data/StudyData";
 
 const Study = () => {
   const [studentIdLookup, setStudentIdLookup] = useState("");
@@ -31,77 +27,6 @@ const Study = () => {
   const [showMessaging, setShowMessaging] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  // Sample data for specific students with the IDs provided
-  const allStudentsData = [
-    { 
-      id: 1, 
-      name: "Arya Pratama", 
-      studentId: "2024D5963", 
-      course: "CMPT 120", 
-      major: "Computer Science", 
-      batch: "2024", 
-      avatar: "", 
-      bio: "Passionate about AI and Machine Learning. Looking for study partners for algorithm practice.",
-      interests: ["Programming", "Artificial Intelligence", "Data Science"],
-      availability: "Weekdays after 4 PM"
-    },
-    { 
-      id: 2, 
-      name: "Maya Wijaya", 
-      studentId: "2024D5962", 
-      course: "CMPT 225", 
-      major: "Computer Science", 
-      batch: "2024", 
-      avatar: "", 
-      bio: "Interested in web development and UX design. Currently working on a portfolio website project.",
-      interests: ["Web Development", "UI/UX Design", "JavaScript"],
-      availability: "Tuesdays and Thursdays"
-    },
-    { 
-      id: 3, 
-      name: "Budi Santoso", 
-      studentId: "2024D5899", 
-      course: "MATH 151", 
-      major: "Mathematics", 
-      batch: "2024", 
-      avatar: "", 
-      bio: "Math enthusiast focusing on calculus and statistics. Would love to join a study group.",
-      interests: ["Calculus", "Statistics", "Problem Solving"],
-      availability: "Weekends and Wednesday evenings"
-    },
-    { 
-      id: 4, 
-      name: "Dewi Sari", 
-      studentId: "2024D5965", 
-      course: "BUS 272", 
-      major: "Business Administration", 
-      batch: "2024", 
-      avatar: "", 
-      bio: "Studying business with a focus on international marketing. Looking for case study partners.",
-      interests: ["Marketing", "Business Strategy", "Global Markets"],
-      availability: "Monday, Wednesday, Friday afternoons"
-    },
-    { 
-      id: 5, 
-      name: "Reza Gunawan", 
-      studentId: "2024D5978", 
-      course: "PHYS 101", 
-      major: "Physics", 
-      batch: "2024", 
-      avatar: "", 
-      bio: "First-year physics student interested in theoretical physics. Seeking study partners for weekly sessions.",
-      interests: ["Physics", "Mathematics", "Research"],
-      availability: "Evenings and weekends"
-    },
-  ];
-
-  // Study sessions data
-  const upcomingSessions = [
-    { id: 1, subject: "Algorithms Study Group", date: "Today, 3:00 PM", location: "AQ 3005", participants: 5 },
-    { id: 2, subject: "Calculus Review", date: "Tomorrow, 11:00 AM", location: "Library Room 2", participants: 3 },
-    { id: 3, subject: "Physics Lab Prep", date: "Oct 20, 4:30 PM", location: "SSC 7172", participants: 4 },
-  ];
 
   // Load connections from localStorage on component mount
   useEffect(() => {
@@ -240,11 +165,11 @@ const Study = () => {
     }
   };
   
-  const sendMessage = () => {
-    if (!messageText.trim() || !selectedStudent) return;
+  const sendMessage = (text: string) => {
+    if (!text.trim() || !selectedStudent) return;
     
     const newMessage = {
-      text: messageText,
+      text: text,
       sender: "me",
       timestamp: new Date()
     };
@@ -253,8 +178,6 @@ const Study = () => {
       ...prev,
       [selectedStudent.studentId]: [...(prev[selectedStudent.studentId] || []), newMessage]
     }));
-    
-    setMessageText("");
     
     // Simulate a reply after 2 seconds
     setTimeout(() => {
@@ -291,8 +214,9 @@ const Study = () => {
     return pendingRequests.includes(studentId);
   };
 
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const handleBack = () => {
+    setSelectedStudent(null);
+    setShowMessaging(false);
   };
 
   return (
@@ -309,379 +233,43 @@ const Study = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Student ID Finder - Enhanced */}
-            <div className="bg-sfu-lightgray p-6 rounded-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
-                  <UserSearch size={20} />
-                </div>
-                <h2 className="text-xl font-display font-semibold">Find Students by ID</h2>
-              </div>
-              
-              <p className="text-gray-600 mb-6">
-                Enter a student ID to find potential study partners from your college.
-              </p>
-              
-              <div className="flex gap-3 mb-6">
-                <div className="flex-grow">
-                  <Input 
-                    type="text" 
-                    placeholder="Try: 2024D5963, 2024D5962, etc." 
-                    value={studentIdLookup}
-                    onChange={(e) => setStudentIdLookup(e.target.value)}
-                    className="bg-white"
-                  />
-                </div>
-                <Button
-                  onClick={findStudentById}
-                  disabled={isSearching}
-                  className="bg-sfu-red hover:bg-sfu-red/90 text-white"
-                >
-                  {isSearching ? "Searching..." : "Find Student"}
-                </Button>
-              </div>
-              
-              {user && (
-                <div className="mb-4 p-3 bg-white rounded-lg text-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-500">Your student ID:</span>
-                    <span className="font-mono text-xs font-semibold bg-sfu-red/10 text-sfu-red px-2 py-1 rounded">
-                      {user.studentId}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Other students can find you using this ID. Share it with classmates you want to study with!
-                  </p>
-                </div>
-              )}
-              
-              {connections.length > 0 && (
-                <div className="mb-4 p-3 bg-white rounded-lg">
-                  <h3 className="font-medium text-sm mb-2">Your Connections ({connections.length})</h3>
-                  <div className="space-y-2">
-                    {connections.map(studentId => {
-                      const student = allStudentsData.find(s => s.studentId === studentId);
-                      if (!student) return null;
-                      
-                      return (
-                        <div key={student.id} className="flex items-center justify-between text-sm p-2 hover:bg-gray-50 rounded-md">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback className="bg-blue-100 text-blue-600">
-                                {student.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{student.name}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0"
-                              onClick={() => openMessaging(student)}
-                            >
-                              <MessageCircle size={16} />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 text-red-500"
-                              onClick={() => removeConnection(student.studentId)}
-                            >
-                              <X size={16} />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              
-              <div className="space-y-3 mt-6">
-                <h3 className="font-medium text-sm uppercase text-gray-500">
-                  {matchedStudents.length > 0 ? "Matched Students" : "Find students to display results"}
-                </h3>
-                
-                {isSearching ? (
-                  <div className="text-center py-8">
-                    <div className="w-10 h-10 mx-auto border-2 border-sfu-red border-t-transparent rounded-full animate-spin"></div>
-                    <p className="mt-4 text-gray-500">Searching for students...</p>
-                  </div>
-                ) : matchedStudents.length > 0 ? (
-                  matchedStudents.map(student => (
-                    <div key={student.id} className="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10 border border-gray-200">
-                          <AvatarFallback className="bg-sfu-red/10 text-sfu-red">
-                            {student.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{student.name}</div>
-                          <div className="text-xs text-gray-500">{student.major} - {student.batch}</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-xs font-medium text-sfu-red">{student.course}</span>
-                        <span className="text-xs text-gray-500">{student.studentId}</span>
-                        <div className="flex gap-2 mt-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs p-0 h-auto text-blue-500"
-                            onClick={() => viewStudentProfile(student)}
-                          >
-                            View Profile
-                          </Button>
-                          
-                          {isConnected(student.studentId) ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-xs p-0 h-auto text-green-600 flex items-center gap-1"
-                              onClick={() => openMessaging(student)}
-                            >
-                              <MessageCircle size={12} />
-                              Message
-                            </Button>
-                          ) : isPendingConnection(student.studentId) ? (
-                            <span className="text-xs text-orange-500">Request Sent</span>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-xs p-0 h-auto text-indigo-600 flex items-center gap-1"
-                              onClick={() => sendConnectionRequest(student.studentId)}
-                            >
-                              <UserPlus size={12} />
-                              Connect
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Enter a student ID above to find potential study partners
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Student ID Finder */}
+            <StudentSearch 
+              studentIdLookup={studentIdLookup}
+              setStudentIdLookup={setStudentIdLookup}
+              onSearch={findStudentById}
+              isSearching={isSearching}
+              matchedStudents={matchedStudents}
+              onViewProfile={viewStudentProfile}
+              onSendConnectionRequest={sendConnectionRequest}
+              onOpenMessaging={openMessaging}
+              onRemoveConnection={removeConnection}
+              isConnected={isConnected}
+              isPendingConnection={isPendingConnection}
+              connections={connections}
+              user={user}
+            />
             
             {/* Right Side: Student Profile, Messaging or Upcoming Sessions */}
             <div className="bg-sfu-lightgray p-6 rounded-xl">
               {showMessaging && selectedStudent ? (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border border-gray-200">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {selectedStudent.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h2 className="font-display font-semibold">{selectedStudent.name}</h2>
-                        <div className="text-xs text-gray-500">{selectedStudent.course} • {selectedStudent.major}</div>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowMessaging(false)}
-                    >
-                      Back
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg h-80 overflow-y-auto mb-4 p-4">
-                    <div className="space-y-3">
-                      {messages[selectedStudent.studentId]?.length > 0 ? (
-                        messages[selectedStudent.studentId].map((msg, index) => (
-                          <div 
-                            key={index} 
-                            className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div 
-                              className={`max-w-[70%] px-3 py-2 rounded-lg ${
-                                msg.sender === 'me' 
-                                  ? 'bg-blue-500 text-white rounded-br-none' 
-                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                              }`}
-                            >
-                              <p className="text-sm">{msg.text}</p>
-                              <p className={`text-xs mt-1 ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-500'}`}>
-                                {formatTime(msg.timestamp)}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center text-gray-500 py-10">
-                          <p>No messages yet</p>
-                          <p className="text-xs mt-2">Send a message to start the conversation</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Input 
-                      type="text" 
-                      placeholder="Type your message..." 
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                      className="bg-white"
-                    />
-                    <Button 
-                      variant="message"
-                      onClick={sendMessage}
-                    >
-                      Send
-                    </Button>
-                  </div>
-                </div>
+                <MessagingPanel 
+                  student={selectedStudent}
+                  onBack={handleBack}
+                  messages={messages[selectedStudent.studentId] || []}
+                  onSendMessage={sendMessage}
+                />
               ) : selectedStudent ? (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-display font-semibold">Student Profile</h2>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setSelectedStudent(null)}
-                    >
-                      Back to Sessions
-                    </Button>
-                  </div>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-16 h-16 border border-gray-200">
-                          <AvatarFallback className="bg-sfu-red/10 text-sfu-red text-lg">
-                            {selectedStudent.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle>{selectedStudent.name}</CardTitle>
-                          <CardDescription className="flex flex-col gap-1 mt-1">
-                            <span className="text-sfu-red font-medium">{selectedStudent.studentId}</span>
-                            <span>{selectedStudent.major} - {selectedStudent.batch}</span>
-                            <span>Current Course: {selectedStudent.course}</span>
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">About</h3>
-                          <p className="text-sm text-gray-600">{selectedStudent.bio}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">Study Interests</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedStudent.interests.map((interest: string, index: number) => (
-                              <span key={index} className="text-xs bg-sfu-red/10 text-sfu-red px-2 py-1 rounded-full">
-                                {interest}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">Availability</h3>
-                          <p className="text-sm text-gray-600">{selectedStudent.availability}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      {isConnected(selectedStudent.studentId) ? (
-                        <Button 
-                          variant="connected" 
-                          className="w-full gap-2"
-                          onClick={() => openMessaging(selectedStudent)}
-                        >
-                          <MessageCircle size={16} />
-                          Message {selectedStudent.name.split(' ')[0]}
-                        </Button>
-                      ) : isPendingConnection(selectedStudent.studentId) ? (
-                        <Button 
-                          disabled 
-                          className="w-full gap-2 opacity-60"
-                        >
-                          <UserCheck size={16} />
-                          Connection Request Sent
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="connect" 
-                          className="w-full gap-2"
-                          onClick={() => sendConnectionRequest(selectedStudent.studentId)}
-                        >
-                          <UserPlus size={16} />
-                          Connect with {selectedStudent.name.split(' ')[0]}
-                        </Button>
-                      )}
-                    </CardFooter>
-                  </Card>
-                </div>
+                <StudentProfile 
+                  student={selectedStudent}
+                  onBack={handleBack}
+                  onOpenMessaging={openMessaging}
+                  onSendConnectionRequest={sendConnectionRequest}
+                  isConnected={isConnected}
+                  isPendingConnection={isPendingConnection}
+                />
               ) : (
-                <>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
-                      <Calendar size={20} />
-                    </div>
-                    <h2 className="text-xl font-display font-semibold">Upcoming Study Sessions</h2>
-                  </div>
-                  
-                  <div className="space-y-4 mb-6">
-                    {upcomingSessions.map(session => (
-                      <div key={session.id} className="bg-white p-4 rounded-lg hover:shadow-sm transition-all duration-200">
-                        <h3 className="font-medium mb-2">{session.subject}</h3>
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Clock size={16} />
-                            <span>{session.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <MapPin size={16} />
-                            <span>{session.location}</span>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex justify-between items-center">
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Users size={14} />
-                            <span>{session.participants} participants</span>
-                          </div>
-                          <Button variant="outline" size="sm" className="text-xs">Join Session</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <Button className="w-full bg-white text-sfu-red hover:bg-gray-50 border border-sfu-red/20">
-                    Create Study Session
-                  </Button>
-                  
-                  <div className="mt-6 p-4 bg-sfu-red/10 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-sfu-red/20 text-sfu-red flex items-center justify-center flex-shrink-0">
-                        <BookOpen size={16} />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm mb-1">Study Partner Matching</h3>
-                        <p className="text-xs text-gray-600 mb-2">
-                          Our AI-powered system can match you with compatible study partners based on your courses, learning style, and schedule.
-                        </p>
-                        <Button variant="outline" size="sm" className="text-xs w-full justify-center">Find My Perfect Match</Button>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                <StudySessions upcomingSessions={upcomingSessions} />
               )}
             </div>
           </div>
