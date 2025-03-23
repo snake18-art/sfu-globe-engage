@@ -2,23 +2,79 @@
 import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { MapPin, Users, BookOpen, Clock, Calendar } from "lucide-react";
+import { MapPin, Users, BookOpen, Clock, Calendar, Search, UserSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Study = () => {
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [nearbyStudents, setNearbyStudents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [studentIdLookup, setStudentIdLookup] = useState("");
+  const [matchedStudents, setMatchedStudents] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Sample data for nearby students
-  const studentsData = [
-    { id: 1, name: "Alex Chen", course: "CMPT 120", distance: "0.5 km", avatar: "" },
-    { id: 2, name: "Morgan Liu", course: "CMPT 225", distance: "0.8 km", avatar: "" },
-    { id: 3, name: "Jessica Wong", course: "MATH 151", distance: "1.2 km", avatar: "" },
-    { id: 4, name: "David Kim", course: "BUS 272", distance: "1.5 km", avatar: "" },
-    { id: 5, name: "Sarah Johnson", course: "CHEM 121", distance: "2.1 km", avatar: "" },
+  // Sample data for all students
+  const allStudentsData = [
+    { id: 1, name: "Alex Chen", studentId: "A12345", course: "CMPT 120", major: "Computer Science", batch: "2022", avatar: "" },
+    { id: 2, name: "Morgan Liu", studentId: "A12346", course: "CMPT 225", major: "Computer Science", batch: "2021", avatar: "" },
+    { id: 3, name: "Jessica Wong", studentId: "A12347", course: "MATH 151", major: "Mathematics", batch: "2022", avatar: "" },
+    { id: 4, name: "David Kim", studentId: "A12348", course: "BUS 272", major: "Business", batch: "2023", avatar: "" },
+    { id: 5, name: "Sarah Johnson", studentId: "A12349", course: "CHEM 121", major: "Chemistry", batch: "2022", avatar: "" },
+    { id: 6, name: "Michael Park", studentId: "A12350", course: "PHYS 101", major: "Physics", batch: "2021", avatar: "" },
+    { id: 7, name: "Emma Wilson", studentId: "A12351", course: "BISC 100", major: "Biology", batch: "2023", avatar: "" },
+    { id: 8, name: "James Lee", studentId: "A12352", course: "PSYC 100", major: "Psychology", batch: "2022", avatar: "" },
+    { id: 9, name: "Olivia Martinez", studentId: "A12353", course: "ENGL 101", major: "English", batch: "2021", avatar: "" },
+    { id: 10, name: "Noah Brown", studentId: "A12354", course: "ECON 103", major: "Economics", batch: "2023", avatar: "" },
   ];
 
+  // Study sessions data
+  const upcomingSessions = [
+    { id: 1, subject: "Algorithms Study Group", date: "Today, 3:00 PM", location: "AQ 3005", participants: 5 },
+    { id: 2, subject: "Calculus Review", date: "Tomorrow, 11:00 AM", location: "Library Room 2", participants: 3 },
+    { id: 3, subject: "Physics Lab Prep", date: "Oct 20, 4:30 PM", location: "SSC 7172", participants: 4 },
+  ];
+
+  const findStudentById = () => {
+    if (!studentIdLookup.trim()) {
+      toast({
+        title: "Input required",
+        description: "Please enter a student ID to search",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    
+    // Simulate API call with timeout
+    setTimeout(() => {
+      const results = allStudentsData.filter(student => 
+        student.studentId.toLowerCase().includes(studentIdLookup.toLowerCase())
+      );
+      
+      setMatchedStudents(results);
+      setIsSearching(false);
+      
+      if (results.length === 0) {
+        toast({
+          title: "No matches found",
+          description: "No students match the provided ID",
+        });
+      } else {
+        toast({
+          title: "Students found",
+          description: `Found ${results.length} student(s) matching your search`,
+        });
+      }
+    }, 1000);
+  };
+
+  // Legacy location-based function
   const getLocation = () => {
     setIsLoading(true);
     if (navigator.geolocation) {
@@ -30,7 +86,7 @@ const Study = () => {
           });
           // Simulate fetching nearby students
           setTimeout(() => {
-            setNearbyStudents(studentsData);
+            setNearbyStudents(allStudentsData.slice(0, 5));
             setIsLoading(false);
           }, 1500);
         },
@@ -39,7 +95,7 @@ const Study = () => {
           setIsLoading(false);
           // Simulate fetching nearby students even if location fails
           setTimeout(() => {
-            setNearbyStudents(studentsData);
+            setNearbyStudents(allStudentsData.slice(0, 5));
           }, 1500);
         }
       );
@@ -48,17 +104,10 @@ const Study = () => {
       setIsLoading(false);
       // Simulate fetching nearby students even if geolocation is not supported
       setTimeout(() => {
-        setNearbyStudents(studentsData);
+        setNearbyStudents(allStudentsData.slice(0, 5));
       }, 1500);
     }
   };
-
-  // Study sessions data
-  const upcomingSessions = [
-    { id: 1, subject: "Algorithms Study Group", date: "Today, 3:00 PM", location: "AQ 3005", participants: 5 },
-    { id: 2, subject: "Calculus Review", date: "Tomorrow, 11:00 AM", location: "Library Room 2", participants: 3 },
-    { id: 3, subject: "Physics Lab Prep", date: "Oct 20, 4:30 PM", location: "SSC 7172", participants: 4 },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -74,66 +123,84 @@ const Study = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Location Finder */}
+            {/* Student ID Finder - New Section */}
             <div className="bg-sfu-lightgray p-6 rounded-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-sfu-red/10 text-sfu-red flex items-center justify-center">
-                  <MapPin size={20} />
+                  <UserSearch size={20} />
                 </div>
-                <h2 className="text-xl font-display font-semibold">Find Nearby Students</h2>
+                <h2 className="text-xl font-display font-semibold">Find Students by ID</h2>
               </div>
               
               <p className="text-gray-600 mb-6">
-                Share your location to find study partners currently near you on campus.
+                Enter a student ID to find potential study partners from your college.
               </p>
               
-              <Button
-                onClick={getLocation}
-                disabled={isLoading}
-                className="w-full bg-sfu-red hover:bg-sfu-red/90 text-white mb-6"
-              >
-                {isLoading ? "Finding Students..." : (location ? "Refresh Location" : "Share My Location")}
-              </Button>
+              <div className="flex gap-3 mb-6">
+                <div className="flex-grow">
+                  <Input 
+                    type="text" 
+                    placeholder="Enter student ID (e.g., A12345)" 
+                    value={studentIdLookup}
+                    onChange={(e) => setStudentIdLookup(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                <Button
+                  onClick={findStudentById}
+                  disabled={isSearching}
+                  className="bg-sfu-red hover:bg-sfu-red/90 text-white"
+                >
+                  {isSearching ? "Searching..." : "Find Student"}
+                </Button>
+              </div>
               
-              {location && (
+              {user && (
                 <div className="mb-4 p-3 bg-white rounded-lg text-sm">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-500">Your coordinates:</span>
-                    <span className="font-mono text-xs">{location.lat.toFixed(4)}, {location.lng.toFixed(4)}</span>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-500">Your student ID:</span>
+                    <span className="font-mono text-xs font-semibold bg-sfu-red/10 text-sfu-red px-2 py-1 rounded">
+                      {user.studentId}
+                    </span>
                   </div>
-                  <div className="h-2 bg-sfu-red/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-sfu-red w-full animate-pulse"></div>
-                  </div>
+                  <p className="text-xs text-gray-500">
+                    Other students can find you using this ID. Share it with classmates you want to study with!
+                  </p>
                 </div>
               )}
               
               <div className="space-y-3 mt-6">
-                <h3 className="font-medium text-sm uppercase text-gray-500">Nearby Students</h3>
+                <h3 className="font-medium text-sm uppercase text-gray-500">
+                  {matchedStudents.length > 0 ? "Matched Students" : "Find students to display results"}
+                </h3>
                 
-                {isLoading ? (
+                {isSearching ? (
                   <div className="text-center py-8">
                     <div className="w-10 h-10 mx-auto border-2 border-sfu-red border-t-transparent rounded-full animate-spin"></div>
-                    <p className="mt-4 text-gray-500">Finding students near you...</p>
+                    <p className="mt-4 text-gray-500">Searching for students...</p>
                   </div>
-                ) : nearbyStudents.length > 0 ? (
-                  nearbyStudents.map(student => (
+                ) : matchedStudents.length > 0 ? (
+                  matchedStudents.map(student => (
                     <div key={student.id} className="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-sm transition-all duration-200">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                          {student.name.charAt(0)}
+                        </div>
                         <div>
                           <div className="font-medium">{student.name}</div>
-                          <div className="text-xs text-gray-500">{student.course}</div>
+                          <div className="text-xs text-gray-500">{student.major} - {student.batch}</div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-xs font-medium text-sfu-red">{student.distance}</span>
-                        <button className="text-xs text-blue-500 hover:underline">Connect</button>
+                        <span className="text-xs font-medium text-sfu-red">{student.course}</span>
+                        <span className="text-xs text-gray-500">{student.studentId}</span>
+                        <button className="text-xs text-blue-500 hover:underline mt-1">Connect</button>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    {location ? "No students found nearby" : "Share your location to find students"}
+                    Enter a student ID above to find potential study partners
                   </div>
                 )}
               </div>
