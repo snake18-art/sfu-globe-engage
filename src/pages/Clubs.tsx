@@ -181,13 +181,7 @@ const Clubs = () => {
       try {
         const { data, error } = await supabase
           .from('club_messages')
-          .select(`
-            id,
-            content,
-            created_at,
-            user_id,
-            profiles:user_id (full_name)
-          `)
+          .select('*')
           .eq('club_id', clubId)
           .order('created_at', { ascending: true });
 
@@ -196,18 +190,36 @@ const Clubs = () => {
         }
 
         if (data) {
-          const formattedMessages = data.map((msg) => ({
-            id: msg.id,
-            senderId: msg.user_id,
-            senderName: msg.profiles?.full_name || 'Unknown User',
-            clubId: clubId,
-            content: msg.content,
-            timestamp: new Date(msg.created_at),
-          }));
+          // For each message, fetch the user's name separately
+          const messagesWithUserInfo = await Promise.all(
+            data.map(async (msg) => {
+              let senderName = 'Unknown User';
+              
+              // Fetch the user's name from profiles
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', msg.user_id)
+                .single();
+              
+              if (!profileError && profileData) {
+                senderName = profileData.full_name || senderName;
+              }
+              
+              return {
+                id: msg.id,
+                senderId: msg.user_id,
+                senderName: senderName,
+                clubId: msg.club_id,
+                content: msg.content,
+                timestamp: new Date(msg.created_at),
+              };
+            })
+          );
 
           setMessages(prev => ({
             ...prev,
-            [clubId]: formattedMessages
+            [clubId]: messagesWithUserInfo
           }));
         }
       } catch (error) {
@@ -244,13 +256,7 @@ const Clubs = () => {
     const fetchNewMessage = async (messageId: string) => {
       const { data, error } = await supabase
         .from('club_messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles:user_id (full_name)
-        `)
+        .select('*')
         .eq('id', messageId)
         .single();
 
@@ -260,10 +266,23 @@ const Clubs = () => {
       }
 
       if (data) {
+        let senderName = 'Unknown User';
+        
+        // Fetch the user's name from profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.user_id)
+          .single();
+        
+        if (!profileError && profileData) {
+          senderName = profileData.full_name || senderName;
+        }
+        
         const newMessage = {
           id: data.id,
           senderId: data.user_id,
-          senderName: data.profiles?.full_name || 'Unknown User',
+          senderName: senderName,
           clubId: selectedClub.id,
           content: data.content,
           timestamp: new Date(data.created_at),
