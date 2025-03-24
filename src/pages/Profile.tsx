@@ -1,15 +1,12 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Camera, Edit2, Calendar, Book, Users, Award, Gamepad, Clock, ArrowLeft } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/layout/Header";
 
@@ -30,12 +27,29 @@ const Profile = () => {
     );
   }
   
-  const getInitials = (name: string) => {
+  const getInitials = (name: string = '') => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase();
+  };
+
+  const getMajorDisplayName = (majorCode: string = 'OTHER') => {
+    const majorMap: Record<string, string> = {
+      'CS': 'Computer Science',
+      'BBA': 'Business Administration',
+      'ENG': 'Engineering',
+      'MED': 'Medical Sciences',
+      'ART': 'Arts & Humanities',
+      'DC': 'Digital Communications',
+      'DCBM': 'Digital Communications & Business Management',
+      'BM': 'Business Management',
+      'OTHER': 'Other'
+    };
+    
+    return majorMap[majorCode] || 'Other';
   };
 
   const stats = [
@@ -72,7 +86,7 @@ const Profile = () => {
               <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
                 <div className="relative group">
                   <Avatar className="h-32 w-32 border-4 border-white bg-sfu-lightgray">
-                    <AvatarImage src={user.profilePic} alt={user.name} />
+                    <AvatarImage src={user.profilePic} alt={user.name || ''} />
                     <AvatarFallback className="text-3xl font-medium bg-sfu-red text-white">
                       {getInitials(user.name)}
                     </AvatarFallback>
@@ -83,21 +97,17 @@ const Profile = () => {
                 </div>
                 
                 <div className="flex-1">
-                  <h1 className="text-2xl font-display font-bold mt-2">{user.name}</h1>
+                  <h1 className="text-2xl font-display font-bold mt-2">{user.name || 'User'}</h1>
                   <p className="text-gray-500">{user.email}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {user.major === 'CS' ? 'Computer Science' : 
-                       user.major === 'BBA' ? 'Business Administration' : 
-                       user.major === 'ENG' ? 'Engineering' : 
-                       user.major === 'MED' ? 'Medical Sciences' : 
-                       user.major === 'ART' ? 'Arts & Humanities' : 'Other'}
+                      {getMajorDisplayName(user.major)}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Batch {user.batch}
+                      Batch {user.batch || 'N/A'}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      ID: {user.studentId}
+                      ID: {user.studentId || 'N/A'}
                     </span>
                   </div>
                 </div>

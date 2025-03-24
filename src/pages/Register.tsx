@@ -130,6 +130,9 @@ const Register = () => {
                         <SelectItem value="ENG">Engineering</SelectItem>
                         <SelectItem value="MED">Medical Sciences</SelectItem>
                         <SelectItem value="ART">Arts & Humanities</SelectItem>
+                        <SelectItem value="DC">Digital Communications</SelectItem>
+                        <SelectItem value="DCBM">Digital Communications & Business Management</SelectItem>
+                        <SelectItem value="BM">Business Management</SelectItem>
                         <SelectItem value="OTHER">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -218,4 +221,3 @@ const Register = () => {
 };
 
 export default Register;
-

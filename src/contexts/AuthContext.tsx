@@ -5,8 +5,17 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+// Extended User type with profile metadata
+type UserWithProfile = User & {
+  name?: string;
+  studentId?: string;
+  major?: string;
+  batch?: string;
+  profilePic?: string;
+};
+
 type AuthContextType = {
-  user: User | null;
+  user: UserWithProfile | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
@@ -23,27 +32,45 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserWithProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Process user data from session to include metadata
+  const processUser = (session: Session | null) => {
+    if (!session?.user) return null;
+    
+    const userData = session.user as UserWithProfile;
+    
+    // Map user_metadata to our profile fields
+    if (session.user.user_metadata) {
+      userData.name = session.user.user_metadata.full_name;
+      userData.studentId = session.user.user_metadata.student_id;
+      userData.major = session.user.user_metadata.major;
+      userData.batch = session.user.user_metadata.batch;
+      userData.profilePic = session.user.user_metadata.avatar_url;
+    }
+    
+    return userData;
+  };
+
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
-        setUser(session?.user ?? null);
+        setUser(processUser(session));
         setIsAuthenticated(!!session?.user);
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(processUser(session));
       setIsAuthenticated(!!session?.user);
     });
 
