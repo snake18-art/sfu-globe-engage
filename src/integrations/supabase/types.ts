@@ -9,6 +9,103 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      club_memberships: {
+        Row: {
+          club_id: string
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_memberships_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_messages: {
+        Row: {
+          club_id: string
+          content: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_messages_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          activities: string[]
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          location: string
+          meeting_time: string
+          members: number | null
+          name: string
+        }
+        Insert: {
+          activities: string[]
+          created_at?: string | null
+          description: string
+          icon: string
+          id?: string
+          location: string
+          meeting_time: string
+          members?: number | null
+          name: string
+        }
+        Update: {
+          activities?: string[]
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          location?: string
+          meeting_time?: string
+          members?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

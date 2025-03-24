@@ -9,6 +9,8 @@ import ClubCard from "@/components/clubs/ClubCard";
 import ClubDetailSheet from "@/components/clubs/ClubDetailSheet";
 import ClubMessaging from "@/components/clubs/ClubMessaging";
 import { Book, Activity, Code, Church, Music } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 // Club type definition
 export type Club = {
@@ -32,6 +34,24 @@ export type Message = {
   timestamp: Date;
 };
 
+// Helper function to map DB icon string to React component
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'book':
+      return <Book className="h-10 w-10 text-blue-500" />;
+    case 'activity':
+      return <Activity className="h-10 w-10 text-orange-500" />;
+    case 'code':
+      return <Code className="h-10 w-10 text-green-500" />;
+    case 'church':
+      return <Church className="h-10 w-10 text-amber-600" />;
+    case 'music':
+      return <Music className="h-10 w-10 text-purple-500" />;
+    default:
+      return <Book className="h-10 w-10 text-gray-500" />;
+  }
+};
+
 const Clubs = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -40,100 +60,228 @@ const Clubs = () => {
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
   const [joinedClubs, setJoinedClubs] = useState<string[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [clubs, setClubs] = useState<Club[]>([]);
 
-  // Define clubs
-  const clubs: Club[] = [
-    {
-      id: "english-club",
-      name: "English Club",
-      description: "Improve your English speaking and writing skills in a friendly, supportive environment.",
-      icon: <Book className="h-10 w-10 text-blue-500" />,
-      members: 28,
-      location: "AQ Building, Room 3005",
-      meetingTime: "Tuesdays 4:30-6:00 PM",
-      activities: ["Conversation practice", "Writing workshops", "Book discussions", "Grammar games"]
-    },
-    {
-      id: "basketball-club",
-      name: "Basketball Club",
-      description: "Join us for casual games, skill development, and competitive play.",
-      icon: <Activity className="h-10 w-10 text-orange-500" />,
-      members: 32,
-      location: "West Gym",
-      meetingTime: "Mondays & Thursdays 7:00-9:00 PM",
-      activities: ["Pickup games", "Skills training", "Intramural tournaments", "Fitness sessions"]
-    },
-    {
-      id: "it-club",
-      name: "IT Club",
-      description: "Learn about technology, coding, and digital innovations with like-minded peers.",
-      icon: <Code className="h-10 w-10 text-green-500" />,
-      members: 45,
-      location: "Applied Sciences Building, Room 9705",
-      meetingTime: "Wednesdays 5:00-7:00 PM",
-      activities: ["Coding workshops", "Hackathons", "Tech talks", "Project collaborations"]
-    },
-    {
-      id: "buddhist-club",
-      name: "Buddhist Club",
-      description: "Explore Buddhist philosophy, meditation, and mindfulness practices.",
-      icon: <Church className="h-10 w-10 text-amber-600" />,
-      members: 19,
-      location: "Interfaith Centre, Room 3200",
-      meetingTime: "Fridays 12:30-2:00 PM",
-      activities: ["Meditation sessions", "Philosophy discussions", "Mindfulness workshops", "Community service"]
-    },
-    {
-      id: "music-club",
-      name: "Music Club",
-      description: "Share your passion for music through performances, jam sessions, and music appreciation.",
-      icon: <Music className="h-10 w-10 text-purple-500" />,
-      members: 37,
-      location: "Arts Building, Room 2050",
-      meetingTime: "Saturdays 2:00-5:00 PM",
-      activities: ["Jam sessions", "Open mic nights", "Music theory classes", "Concerts"]
-    }
-  ];
-
-  // Load joined clubs from localStorage
+  // Fetch clubs from Supabase
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const savedJoinedClubs = localStorage.getItem(`joinedClubs-${user.id}`);
-      if (savedJoinedClubs) {
-        setJoinedClubs(JSON.parse(savedJoinedClubs));
-      }
-      
-      // Load messages
-      const savedMessages = localStorage.getItem(`clubMessages`);
-      if (savedMessages) {
-        const parsedMessages = JSON.parse(savedMessages);
-        // Convert string dates back to Date objects
-        Object.keys(parsedMessages).forEach(clubId => {
-          parsedMessages[clubId] = parsedMessages[clubId].map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
+    const fetchClubs = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('clubs')
+          .select('*');
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          // Transform the data to match our Club type
+          const transformedClubs = data.map((club) => ({
+            id: club.id,
+            name: club.name,
+            description: club.description,
+            icon: getIconComponent(club.icon),
+            members: club.members,
+            location: club.location,
+            meetingTime: club.meeting_time,
+            activities: club.activities,
           }));
+
+          setClubs(transformedClubs);
+        }
+      } catch (error) {
+        console.error('Error fetching clubs:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load clubs",
+          variant: "destructive"
         });
-        setMessages(parsedMessages);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    fetchClubs();
+  }, [toast]);
+
+  // Fetch user club memberships
+  useEffect(() => {
+    const fetchUserMemberships = async () => {
+      if (!isAuthenticated || !user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('club_memberships')
+          .select('club_id')
+          .eq('user_id', user.id);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          setJoinedClubs(data.map((membership) => membership.club_id));
+        }
+      } catch (error) {
+        console.error('Error fetching club memberships:', error);
+      }
+    };
+
+    fetchUserMemberships();
   }, [isAuthenticated, user]);
 
-  // Save joined clubs to localStorage when changed
+  // Subscribe to club membership changes
   useEffect(() => {
-    if (isAuthenticated && user && joinedClubs.length > 0) {
-      localStorage.setItem(`joinedClubs-${user.id}`, JSON.stringify(joinedClubs));
-    }
-  }, [joinedClubs, isAuthenticated, user]);
+    if (!isAuthenticated || !user) return;
 
-  // Save messages to localStorage when changed
+    const channel = supabase
+      .channel('club-memberships-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'club_memberships',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refresh memberships when changes happen
+          fetchUserMemberships();
+        }
+      )
+      .subscribe();
+
+    const fetchUserMemberships = async () => {
+      const { data, error } = await supabase
+        .from('club_memberships')
+        .select('club_id')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching memberships:', error);
+        return;
+      }
+
+      if (data) {
+        setJoinedClubs(data.map((membership) => membership.club_id));
+      }
+    };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated, user]);
+
+  // Fetch club messages
   useEffect(() => {
-    if (Object.keys(messages).length > 0) {
-      localStorage.setItem(`clubMessages`, JSON.stringify(messages));
-    }
-  }, [messages]);
+    const fetchClubMessages = async (clubId: string) => {
+      if (!clubId || !isAuthenticated) return;
 
-  const handleJoinClub = (clubId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('club_messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            user_id,
+            profiles:user_id (full_name)
+          `)
+          .eq('club_id', clubId)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const formattedMessages = data.map((msg) => ({
+            id: msg.id,
+            senderId: msg.user_id,
+            senderName: msg.profiles?.full_name || 'Unknown User',
+            clubId: clubId,
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+          }));
+
+          setMessages(prev => ({
+            ...prev,
+            [clubId]: formattedMessages
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching club messages:', error);
+      }
+    };
+
+    // If a club is selected, fetch its messages
+    if (selectedClub) {
+      fetchClubMessages(selectedClub.id);
+    }
+  }, [selectedClub, isAuthenticated]);
+
+  // Subscribe to message changes for the selected club
+  useEffect(() => {
+    if (!selectedClub || !isAuthenticated) return;
+
+    const channel = supabase
+      .channel(`club-messages-${selectedClub.id}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'club_messages',
+          filter: `club_id=eq.${selectedClub.id}`
+        },
+        (payload) => {
+          // Fetch the new message with user info
+          fetchNewMessage(payload.new.id);
+        }
+      )
+      .subscribe();
+
+    const fetchNewMessage = async (messageId: string) => {
+      const { data, error } = await supabase
+        .from('club_messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles:user_id (full_name)
+        `)
+        .eq('id', messageId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching new message:', error);
+        return;
+      }
+
+      if (data) {
+        const newMessage = {
+          id: data.id,
+          senderId: data.user_id,
+          senderName: data.profiles?.full_name || 'Unknown User',
+          clubId: selectedClub.id,
+          content: data.content,
+          timestamp: new Date(data.created_at),
+        };
+
+        setMessages(prev => ({
+          ...prev,
+          [selectedClub.id]: [...(prev[selectedClub.id] || []), newMessage]
+        }));
+      }
+    };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedClub, isAuthenticated]);
+
+  const handleJoinClub = async (clubId: string) => {
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -143,17 +291,43 @@ const Clubs = () => {
       return;
     }
 
-    if (joinedClubs.includes(clubId)) {
-      setJoinedClubs(joinedClubs.filter(id => id !== clubId));
+    try {
+      if (joinedClubs.includes(clubId)) {
+        // Leave club
+        const { error } = await supabase
+          .from('club_memberships')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('club_id', clubId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Club Left",
+          description: "You have left the club"
+        });
+      } else {
+        // Join club
+        const { error } = await supabase
+          .from('club_memberships')
+          .insert({
+            user_id: user.id,
+            club_id: clubId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Club Joined",
+          description: "You have successfully joined the club"
+        });
+      }
+    } catch (error) {
+      console.error('Error updating club membership:', error);
       toast({
-        title: "Club Left",
-        description: "You have left the club"
-      });
-    } else {
-      setJoinedClubs([...joinedClubs, clubId]);
-      toast({
-        title: "Club Joined",
-        description: "You have successfully joined the club"
+        title: "Error",
+        description: "Failed to update club membership",
+        variant: "destructive"
       });
     }
   };
@@ -186,25 +360,27 @@ const Clubs = () => {
     setIsMessagingOpen(true);
   };
 
-  const handleSendMessage = (clubId: string, content: string) => {
-    if (!user) return;
+  const handleSendMessage = async (clubId: string, content: string) => {
+    if (!user || !isAuthenticated) return;
     
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: user.id,
-      senderName: user.name,
-      clubId,
-      content,
-      timestamp: new Date()
-    };
+    try {
+      const { error } = await supabase
+        .from('club_messages')
+        .insert({
+          club_id: clubId,
+          user_id: user.id,
+          content: content
+        });
 
-    setMessages(prev => {
-      const clubMessages = prev[clubId] || [];
-      return {
-        ...prev,
-        [clubId]: [...clubMessages, newMessage]
-      };
-    });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -231,18 +407,25 @@ const Clubs = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.map(club => (
-              <ClubCard 
-                key={club.id}
-                club={club}
-                isJoined={joinedClubs.includes(club.id)}
-                onJoin={() => handleJoinClub(club.id)}
-                onViewDetails={() => handleOpenDetail(club)}
-                onOpenMessaging={() => handleOpenMessaging(club)}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-sfu-red" />
+              <span className="ml-2 text-lg">Loading clubs...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {clubs.map(club => (
+                <ClubCard 
+                  key={club.id}
+                  club={club}
+                  isJoined={joinedClubs.includes(club.id)}
+                  onJoin={() => handleJoinClub(club.id)}
+                  onViewDetails={() => handleOpenDetail(club)}
+                  onOpenMessaging={() => handleOpenMessaging(club)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
       
