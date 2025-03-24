@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ClubCard from "@/components/clubs/ClubCard";
 import ClubDetailSheet from "@/components/clubs/ClubDetailSheet";
 import ClubMessaging from "@/components/clubs/ClubMessaging";
-import { Book, Basketball, Code, Church, Music } from "lucide-react";
+import { Book, Activity, Code, Church, Music } from "lucide-react";
 
 // Club type definition
 export type Club = {
@@ -57,7 +57,7 @@ const Clubs = () => {
       id: "basketball-club",
       name: "Basketball Club",
       description: "Join us for casual games, skill development, and competitive play.",
-      icon: <Basketball className="h-10 w-10 text-orange-500" />,
+      icon: <Activity className="h-10 w-10 text-orange-500" />,
       members: 32,
       location: "West Gym",
       meetingTime: "Mondays & Thursdays 7:00-9:00 PM",
