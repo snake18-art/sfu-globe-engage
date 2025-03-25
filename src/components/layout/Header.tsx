@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Bell, Gamepad, CalendarCheck, ShoppingBag, Radio } from 'lucide-react';
+import { Menu, X, User, Bell, Gamepad, CalendarCheck, ShoppingBag, Radio, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,6 +36,7 @@ const Header: React.FC = () => {
     { name: 'Attendance', path: '/attendance' },
     { name: 'Marketplace', path: '/marketplace' },
     { name: 'Newsfeed', path: '/newsfeed' },
+    { name: 'AI Assistant', path: '/ai-assistant' },
   ];
 
   const isActive = (path: string) => {

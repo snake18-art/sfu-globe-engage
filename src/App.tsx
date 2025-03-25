@@ -15,6 +15,7 @@ import Login from '@/pages/Login';
 import Profile from '@/pages/Profile';
 import Marketplace from '@/pages/Marketplace';
 import Newsfeed from '@/pages/Newsfeed';
+import AIAssistant from '@/pages/AIAssistant';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/newsfeed" element={<Newsfeed />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

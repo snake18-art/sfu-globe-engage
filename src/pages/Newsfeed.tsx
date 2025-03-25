@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import PostCard from "@/components/newsfeed/PostCard";
-import CreatePostCard from "@/components/newsfeed/CreatePostCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from '@/contexts/AuthContext';
+import { PostCard, PostData } from "@/components/newsfeed/PostCard";
+import { CreatePostCard } from "@/components/newsfeed/CreatePostCard";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Filter } from "lucide-react";
 
 // Sample trending topics
 const TRENDING_TOPICS = [
@@ -133,7 +134,6 @@ const INITIAL_POSTS: PostData[] = [
 ];
 
 const Newsfeed = () => {
-  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("all");
   const [posts, setPosts] = useState<PostData[]>(INITIAL_POSTS);
   
