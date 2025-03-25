@@ -19,9 +19,11 @@ import { AuthProvider } from '@/contexts/AuthContext';
 
 function App() {
   return (
+    // Move Router to be the outermost wrapper
     <Router>
-      <AuthProvider>
-        <div className="app">
+      <div className="app">
+        {/* Place AuthProvider inside Router so useNavigate works correctly */}
+        <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/study" element={<Study />} />
@@ -38,8 +40,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
-        </div>
-      </AuthProvider>
+        </AuthProvider>
+      </div>
     </Router>
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Filter, Search, ShoppingBag, Tag, ArrowUpDown, Grid, List, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,13 +37,11 @@ const Marketplace = () => {
         query = query.eq("category", selectedCategory);
       }
       
-      // Apply sorting
       if (sortBy === "price-low") {
         query = query.order("price", { ascending: true });
       } else if (sortBy === "price-high") {
         query = query.order("price", { ascending: false });
       } else {
-        // Default sort by newest
         query = query.order("posted_at", { ascending: false });
       }
       
@@ -52,10 +49,8 @@ const Marketplace = () => {
       
       if (error) throw error;
       
-      // Fetch seller info
       const itemsWithSellerInfo = await Promise.all(
         (data || []).map(async (item) => {
-          // Fetch seller name
           const { data: sellerData } = await supabase
             .from("profiles")
             .select("full_name")
@@ -79,7 +74,6 @@ const Marketplace = () => {
     }
   };
   
-  // Apply search filter
   const filteredItems = items.filter(item => {
     if (searchTerm && !item.title.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
@@ -93,7 +87,6 @@ const Marketplace = () => {
   }, [selectedCategory, sortBy]);
   
   useEffect(() => {
-    // Listen for events to open item detail
     const handleOpenDetail = (event: CustomEvent) => {
       setSelectedItem(event.detail);
       setDetailSheetOpen(true);
@@ -101,13 +94,12 @@ const Marketplace = () => {
     
     window.addEventListener('openItemDetail', handleOpenDetail as EventListener);
     
-    // Listen for sheet close events
     const handleCloseSheet = () => {
       document.querySelectorAll('[data-state="open"]').forEach((el) => {
         if (el.id.includes('radix-')) {
           const closeButton = el.querySelector('button[type="button"]');
           if (closeButton) {
-            closeButton.click();
+            (closeButton as HTMLElement).click();
           }
         }
       });
@@ -274,7 +266,6 @@ const Marketplace = () => {
   );
 };
 
-// Helper function to format time ago
 const formatTimeAgo = (dateString: string) => {
   const now = new Date();
   const date = new Date(dateString);

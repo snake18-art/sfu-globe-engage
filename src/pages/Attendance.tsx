@@ -5,10 +5,16 @@ import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudentDashboard from "@/components/attendance/StudentDashboard";
 import TeacherDashboard from "@/components/attendance/TeacherDashboard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Attendance = () => {
-  // State for user role (in a real app, this would come from authentication)
-  const [userRole, setUserRole] = useState<"student" | "teacher">("student");
+  // Attempt to determine user role from auth context
+  const { user } = useAuth();
+  
+  // Default to student if no role found
+  const [userRole, setUserRole] = useState<"student" | "teacher">(
+    user?.user_metadata?.role === "teacher" ? "teacher" : "student"
+  );
   
   // Sample courses data
   const courses = [

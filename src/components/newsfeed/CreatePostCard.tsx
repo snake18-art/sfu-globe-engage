@@ -1,235 +1,280 @@
 
 import React, { useState, useRef } from "react";
-import { Image, Video, MapPin, Calendar, Send, X } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Image, Video, MapPin, Smile, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-interface CreatePostCardProps {
-  onPostCreated: (post: any) => void;
+interface MediaPreview {
+  url: string;
+  type: "image" | "video";
+  file: File;
 }
 
-export const CreatePostCard = ({ onPostCreated }: CreatePostCardProps) => {
+// Updated post type to include images and videos arrays
+interface Post {
+  id: number;
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  content: string;
+  timestamp: Date;
+  likes: number;
+  comments: any[];
+  shares: number;
+  location: string;
+  images?: string[];
+  videos?: {url: string, views: number}[];
+}
+
+interface CreatePostCardProps {
+  onPostCreated: (post: Post) => void;
+}
+
+const CreatePostCard: React.FC<CreatePostCardProps> = ({ onPostCreated }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [postText, setPostText] = useState("");
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [mediaPreviews, setMediaPreviews] = useState<{ type: 'image' | 'video', url: string }[]>([]);
   const [location, setLocation] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<MediaPreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      
-      // Create object URLs for previews
-      const newPreviews = newFiles.map(file => {
-        const isVideo = file.type.startsWith('video/');
-        return {
-          type: isVideo ? 'video' as const : 'image' as const,
-          url: URL.createObjectURL(file)
-        };
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLocationAdd = () => {
+    // This would typically use browser geolocation or let user select
+    setLocation("San Francisco, CA");
+    toast({
+      title: "Location added",
+      description: "San Francisco, CA has been added to your post",
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const newMediaPreviews: MediaPreview[] = [];
+    
+    Array.from(files).forEach(file => {
+      const objectUrl = URL.createObjectURL(file);
+      newMediaPreviews.push({
+        url: objectUrl,
+        type,
+        file
       });
-      
-      setMediaFiles([...mediaFiles, ...newFiles]);
-      setMediaPreviews([...mediaPreviews, ...newPreviews]);
-    }
+    });
+    
+    setMediaFiles(prev => [...prev, ...newMediaPreviews]);
+    e.target.value = ''; // Reset the input
   };
-  
+
   const removeMedia = (index: number) => {
-    URL.revokeObjectURL(mediaPreviews[index].url);
-    
-    const updatedFiles = [...mediaFiles];
-    updatedFiles.splice(index, 1);
-    
-    const updatedPreviews = [...mediaPreviews];
-    updatedPreviews.splice(index, 1);
-    
-    setMediaFiles(updatedFiles);
-    setMediaPreviews(updatedPreviews);
+    setMediaFiles(prev => {
+      const updatedMedia = [...prev];
+      // Release object URL to avoid memory leaks
+      URL.revokeObjectURL(updatedMedia[index].url);
+      updatedMedia.splice(index, 1);
+      return updatedMedia;
+    });
   };
-  
-  const handlePostSubmit = () => {
+
+  const handleSubmit = async () => {
     if (!postText.trim() && mediaFiles.length === 0) {
       toast({
+        variant: "destructive",
         title: "Empty post",
         description: "Please add some text or media to your post.",
-        variant: "destructive"
       });
       return;
     }
-    
-    // Create new post object
-    const newPost = {
-      id: Date.now(),
-      author: {
-        name: user?.name || "User",
-        username: user?.email?.split('@')[0] || "user",
-        avatar: user?.profilePic || "",
-      },
-      content: postText,
-      timestamp: new Date(),
-      likes: 0,
-      comments: [],
-      shares: 0,
-      location: location || undefined,
-    };
-    
-    // Add image URLs if there are any
-    if (mediaFiles.some(file => file.type.startsWith('image/'))) {
-      newPost.images = mediaPreviews
-        .filter(preview => preview.type === 'image')
-        .map(preview => preview.url);
+
+    setIsLoading(true);
+
+    try {
+      // In a real app, would upload media to storage and get URLs
+      // Simulating a server call with timeout
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create post object with images and videos arrays
+      const newPost: Post = {
+        id: Date.now(),
+        author: {
+          name: user?.name || "Anonymous User",
+          username: user?.email?.split('@')[0] || "anonymous",
+          avatar: user?.profilePic || "/placeholder.svg",
+        },
+        content: postText,
+        timestamp: new Date(),
+        likes: 0,
+        comments: [],
+        shares: 0,
+        location,
+        images: mediaFiles.filter(m => m.type === "image").map(m => m.url),
+        videos: mediaFiles.filter(m => m.type === "video").map(m => ({
+          url: m.url,
+          views: 0
+        }))
+      };
+      
+      onPostCreated(newPost);
+      
+      // Reset form
+      setPostText("");
+      setLocation("");
+      setMediaFiles([]);
+      
+      toast({
+        title: "Post created",
+        description: "Your post has been published successfully!",
+      });
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Add video URLs if there are any
-    if (mediaFiles.some(file => file.type.startsWith('video/'))) {
-      newPost.videos = mediaPreviews
-        .filter(preview => preview.type === 'video')
-        .map(preview => ({
-          url: preview.url,
-          viewCount: 0
-        }));
-    }
-    
-    // Call parent function to add the post
-    onPostCreated(newPost);
-    
-    // Reset form
-    setPostText("");
-    setMediaFiles([]);
-    setMediaPreviews([]);
-    setLocation("");
-    
-    toast({
-      title: "Post created",
-      description: "Your post was published successfully."
-    });
   };
-  
+
   return (
-    <Card className="mb-6">
+    <Card className="shadow-md mb-6">
       <CardContent className="pt-6">
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.profilePic} />
-            <AvatarFallback className="bg-sfu-red text-white">
-              {user ? user.name.charAt(0) : 'U'}
-            </AvatarFallback>
+            <img 
+              src={user?.profilePic || "/placeholder.svg"} 
+              alt={user?.name || "User"} 
+              className="h-full w-full object-cover" 
+            />
           </Avatar>
           <div className="flex-1">
-            <Textarea 
+            <Input
+              className="border-none bg-gray-100 focus-visible:ring-0 rounded-full px-4 h-12"
               placeholder="What's on your mind?"
-              className="w-full resize-none border-none focus-visible:ring-0 p-0"
-              rows={3}
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
             />
+
+            {location && (
+              <div className="flex items-center mt-2 text-sm text-gray-500">
+                <MapPin className="h-4 w-4 mr-1" /> 
+                <span>{location}</span>
+              </div>
+            )}
           </div>
         </div>
-        
-        {/* Location input */}
-        {location && (
-          <div className="mt-2 ml-14 flex items-center text-sm text-gray-600">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span>{location}</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 ml-1" 
-              onClick={() => setLocation("")}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        )}
-        
-        {/* Media previews */}
-        {mediaPreviews.length > 0 && (
-          <div className="mt-4 ml-14 grid grid-cols-2 gap-2">
-            {mediaPreviews.map((preview, index) => (
-              <div key={index} className="relative rounded-md overflow-hidden">
-                {preview.type === 'image' ? (
+
+        {mediaFiles.length > 0 && (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {mediaFiles.map((media, index) => (
+              <div key={index} className="relative rounded-md overflow-hidden bg-gray-100">
+                {media.type === "image" ? (
                   <img 
-                    src={preview.url} 
-                    alt={`Upload preview ${index}`} 
-                    className="w-full h-40 object-cover"
+                    src={media.url} 
+                    alt={`Upload ${index}`} 
+                    className="w-full h-48 object-cover"
                   />
                 ) : (
                   <video 
-                    src={preview.url} 
-                    className="w-full h-40 object-cover" 
+                    src={media.url} 
+                    className="w-full h-48 object-cover" 
                     controls
                   />
                 )}
                 <Button 
                   variant="destructive" 
-                  size="sm" 
-                  className="absolute top-1 right-1 h-6 w-6 p-0 rounded-full opacity-80 hover:opacity-100" 
+                  size="icon" 
+                  className="absolute top-2 right-2 h-6 w-6 rounded-full"
                   onClick={() => removeMedia(index)}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ))}
           </div>
         )}
-        
-        {/* Hidden file input */}
-        <input 
-          type="file" 
-          ref={fileInputRef}
-          className="hidden" 
-          accept="image/*,video/*" 
-          multiple
-          onChange={handleFileChange}
-        />
-      </CardContent>
-      <CardFooter className="flex justify-between border-t pt-4">
-        <div className="flex gap-2">
+
+        <Separator className="my-4" />
+
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              className="text-gray-600" 
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Image className="h-5 w-5 mr-2" />
+              Photo
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              multiple
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, "image")}
+            />
+
+            <Button 
+              variant="ghost" 
+              className="text-gray-600" 
+              size="sm"
+              onClick={() => videoInputRef.current?.click()}
+            >
+              <Video className="h-5 w-5 mr-2" />
+              Video
+            </Button>
+            <input
+              type="file"
+              ref={videoInputRef}
+              className="hidden"
+              multiple
+              accept="video/*"
+              onChange={(e) => handleFileChange(e, "video")}
+            />
+
+            <Button 
+              variant="ghost" 
+              className="text-gray-600" 
+              size="sm"
+              onClick={handleLocationAdd}
+            >
+              <MapPin className="h-5 w-5 mr-2" />
+              Location
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              className="text-gray-600" 
+              size="sm"
+            >
+              <Smile className="h-5 w-5 mr-2" />
+              Feeling
+            </Button>
+          </div>
+
           <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-500"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleSubmit} 
+            className="bg-sfu-red hover:bg-sfu-red/90"
+            disabled={isLoading}
           >
-            <Image className="h-4 w-4 mr-1" /> Photo
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-500"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Video className="h-4 w-4 mr-1" /> Video
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-500"
-            onClick={() => setLocation("University Campus")}
-          >
-            <MapPin className="h-4 w-4 mr-1" /> Location
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-500"
-          >
-            <Calendar className="h-4 w-4 mr-1" /> Event
+            {isLoading ? "Posting..." : "Post"}
           </Button>
         </div>
-        <Button 
-          className="bg-sfu-red hover:bg-sfu-red/90"
-          disabled={!postText.trim() && mediaFiles.length === 0}
-          onClick={handlePostSubmit}
-        >
-          <Send className="h-4 w-4 mr-2" /> Post
-        </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };
+
+export default CreatePostCard;
