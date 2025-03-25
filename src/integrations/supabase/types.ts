@@ -106,6 +106,121 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_items: {
+        Row: {
+          category: string
+          condition: string
+          description: string
+          id: string
+          image_url: string | null
+          posted_at: string
+          price: number
+          seller_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category: string
+          condition: string
+          description: string
+          id?: string
+          image_url?: string | null
+          posted_at?: string
+          price: number
+          seller_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          condition?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          posted_at?: string
+          price?: number
+          seller_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      marketplace_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          order_id: string
+          read: boolean
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          order_id: string
+          read?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          read?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_orders: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          item_id: string
+          message: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          message?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          message?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
