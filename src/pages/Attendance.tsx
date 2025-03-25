@@ -1,20 +1,40 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudentDashboard from "@/components/attendance/StudentDashboard";
 import TeacherDashboard from "@/components/attendance/TeacherDashboard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Shield } from "lucide-react";
 
 const Attendance = () => {
-  // Attempt to determine user role from auth context
   const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Default to student if no role found
-  const [userRole, setUserRole] = useState<"student" | "teacher">(
-    user?.user_metadata?.role === "teacher" ? "teacher" : "student"
-  );
+  // Get user role from metadata - default to student if no role specified
+  const userRole = user?.user_metadata?.role === "teacher" ? "teacher" : "student";
+  
+  // State to track the currently selected view
+  const [selectedView, setSelectedView] = useState<"student" | "teacher">(userRole);
+  
+  // When view changes, check for permission
+  const handleViewChange = (value: string) => {
+    const newValue = value as "student" | "teacher";
+    
+    // If user is a student and trying to access teacher view
+    if (userRole === "student" && newValue === "teacher") {
+      toast({
+        title: "Access Denied",
+        description: "Only teachers can access the teacher dashboard.",
+        variant: "destructive",
+      });
+      return; // Don't change the view
+    }
+    
+    // Otherwise, allow the change
+    setSelectedView(newValue);
+  };
   
   // Sample courses data
   const courses = [
@@ -38,11 +58,16 @@ const Attendance = () => {
             </p>
           </div>
 
-          <Tabs defaultValue={userRole} onValueChange={(value) => setUserRole(value as "student" | "teacher")}>
+          <Tabs value={selectedView} onValueChange={handleViewChange}>
             <div className="flex justify-center mb-6">
               <TabsList className="mx-auto">
                 <TabsTrigger value="student">Student View</TabsTrigger>
-                <TabsTrigger value="teacher">Teacher View</TabsTrigger>
+                <TabsTrigger value="teacher" disabled={userRole === "student"}>
+                  {userRole === "student" && (
+                    <Shield className="h-4 w-4 mr-1" />
+                  )}
+                  Teacher View
+                </TabsTrigger>
               </TabsList>
             </div>
             
@@ -54,6 +79,12 @@ const Attendance = () => {
               <TeacherDashboard courses={courses} />
             </TabsContent>
           </Tabs>
+          
+          {userRole === "student" && (
+            <div className="mt-6 text-center text-sm text-gray-500">
+              <p>Teacher features are restricted to authorized teaching staff only.</p>
+            </div>
+          )}
         </div>
       </main>
       

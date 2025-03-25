@@ -15,47 +15,60 @@ interface TeacherDashboardProps {
   }>;
 }
 
+// Define the student attendance type to fix TypeScript errors
+type AttendanceStatus = "present" | "absent" | "late" | "excused";
+type AttendanceMethod = "qr" | "manual" | "system";
+
+interface StudentAttendanceRecord {
+  id: string;
+  name: string;
+  status: AttendanceStatus;
+  checkInTime?: string;
+  method: AttendanceMethod;
+}
+
 const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ courses }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourse, setSelectedCourse] = useState<string>(courses[0]?.id || "");
   const { toast } = useToast();
 
   // Sample student data - in a real app, this would come from your backend
-  const [studentAttendance, setStudentAttendance] = useState([
+  const [studentAttendance, setStudentAttendance] = useState<StudentAttendanceRecord[]>([
     {
       id: "1",
       name: "Alex Johnson",
-      status: "present" as const,
+      status: "present",
       checkInTime: "10:15 AM",
-      method: "qr" as const
+      method: "qr"
     },
     {
       id: "2",
       name: "Jamie Smith",
-      status: "late" as const,
+      status: "late",
       checkInTime: "10:45 AM",
-      method: "qr" as const
+      method: "qr"
     },
     {
       id: "3",
       name: "Taylor Brown",
-      status: "absent" as const,
+      status: "absent",
       checkInTime: undefined,
-      method: "system" as const
+      method: "system"
     },
     {
       id: "4",
       name: "Morgan Williams",
-      status: "excused" as const,
+      status: "excused",
       checkInTime: undefined,
-      method: "manual" as const
+      method: "manual"
     }
   ]);
 
-  const handleStatusChange = (studentId: string, newStatus: "present" | "absent" | "late" | "excused") => {
+  const handleStatusChange = (studentId: string, newStatus: AttendanceStatus) => {
     const updatedAttendance = studentAttendance.map(student => {
       if (student.id === studentId) {
-        const updatedStudent = { 
+        // Create a new updated student record
+        return { 
           ...student, 
           status: newStatus,
           method: "manual" as const,
@@ -64,7 +77,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ courses }) => {
             ? new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
             : student.checkInTime
         };
-        return updatedStudent;
       }
       return student;
     });

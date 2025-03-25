@@ -1,16 +1,10 @@
-
-import React, { useState } from "react";
-import { 
-  Filter, UserPlus
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React, { useState } from 'react';
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { useAuth } from "@/contexts/AuthContext";
-import { CreatePostCard } from "@/components/newsfeed/CreatePostCard";
-import { PostCard, PostData } from "@/components/newsfeed/PostCard";
+import PostCard from "@/components/newsfeed/PostCard";
+import CreatePostCard from "@/components/newsfeed/CreatePostCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from '@/contexts/AuthContext';
 
 // Sample trending topics
 const TRENDING_TOPICS = [
