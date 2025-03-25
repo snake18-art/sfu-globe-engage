@@ -1,22 +1,47 @@
 
 import React, { useState } from "react";
 import { 
-  ThumbsUp, MessageSquare, Share2, BookmarkPlus, 
-  Image, Smile, MapPin, Calendar, Send, Filter, UserPlus
+  Filter, UserPlus
 } from "lucide-react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import { CreatePostCard } from "@/components/newsfeed/CreatePostCard";
+import { PostCard, PostData } from "@/components/newsfeed/PostCard";
+
+// Sample trending topics
+const TRENDING_TOPICS = [
+  "#FinalsWeek",
+  "#CampusEvents",
+  "#StudyTips",
+  "#ScholarshipDeadlines",
+  "#InternshipOpportunities"
+];
+
+// Sample suggested users to follow
+const SUGGESTED_USERS = [
+  {
+    name: "International Student Club",
+    username: "int_student_club",
+    avatar: "https://randomuser.me/api/portraits/women/11.jpg"
+  },
+  {
+    name: "Career Services",
+    username: "career_services",
+    avatar: "https://randomuser.me/api/portraits/men/12.jpg"
+  },
+  {
+    name: "Student Health Center",
+    username: "health_center",
+    avatar: "https://randomuser.me/api/portraits/women/13.jpg"
+  }
+];
 
 // Sample posts for the newsfeed
-const POSTS = [
+const INITIAL_POSTS: PostData[] = [
   {
     id: 1,
     author: {
@@ -91,51 +116,54 @@ const POSTS = [
     comments: 5,
     shares: 32,
     isOfficial: true
-  }
-];
-
-// Sample trending topics
-const TRENDING_TOPICS = [
-  "#FinalsWeek",
-  "#CampusEvents",
-  "#StudyTips",
-  "#ScholarshipDeadlines",
-  "#InternshipOpportunities"
-];
-
-// Sample suggested users to follow
-const SUGGESTED_USERS = [
-  {
-    name: "International Student Club",
-    username: "int_student_club",
-    avatar: "https://randomuser.me/api/portraits/women/11.jpg"
   },
   {
-    name: "Career Services",
-    username: "career_services",
-    avatar: "https://randomuser.me/api/portraits/men/12.jpg"
-  },
-  {
-    name: "Student Health Center",
-    username: "health_center",
-    avatar: "https://randomuser.me/api/portraits/women/13.jpg"
+    id: 6,
+    author: {
+      name: "Tech Club",
+      username: "tech_club",
+      avatar: "https://randomuser.me/api/portraits/men/6.jpg"
+    },
+    content: "Check out our latest tech demo! We've been working on this AR project for the campus tour app. Still in beta, but we'd love your feedback!",
+    videos: [
+      {
+        url: "https://samplelib.com/lib/preview/mp4/sample-5s.mp4",
+        viewCount: 124
+      }
+    ],
+    timestamp: new Date(Date.now() - 48 * 3600 * 1000),
+    likes: 52,
+    comments: 18,
+    shares: 7
   }
 ];
 
 const Newsfeed = () => {
   const { user } = useAuth();
-  const [newPostText, setNewPostText] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [posts, setPosts] = useState<PostData[]>(INITIAL_POSTS);
   
   // Filter posts based on active filter
-  const filteredPosts = POSTS.filter(post => {
+  const filteredPosts = posts.filter(post => {
     if (activeFilter === "official") {
       return post.isOfficial;
     } else if (activeFilter === "events") {
       return post.event;
+    } else if (activeFilter === "media") {
+      return post.images?.length || post.videos?.length;
     }
     return true;
   });
+
+  // Handle creating a new post
+  const handleNewPost = (newPost: PostData) => {
+    setPosts([newPost, ...posts]);
+  };
+
+  // Handle deleting a post
+  const handleDeletePost = (postId: number) => {
+    setPosts(posts.filter(post => post.id !== postId));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -187,46 +215,7 @@ const Newsfeed = () => {
           {/* Main content */}
           <div className="lg:col-span-2">
             {/* Post creation card */}
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.profilePic} />
-                    <AvatarFallback className="bg-sfu-red text-white">
-                      {user ? user.name.charAt(0) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <Textarea 
-                      placeholder="What's on your mind?"
-                      className="w-full resize-none border-none focus-visible:ring-0 p-0"
-                      rows={3}
-                      value={newPostText}
-                      onChange={(e) => setNewPostText(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between border-t pt-4">
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="text-gray-500">
-                    <Image className="h-4 w-4 mr-1" /> Photo
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-500">
-                    <MapPin className="h-4 w-4 mr-1" /> Location
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-500">
-                    <Calendar className="h-4 w-4 mr-1" /> Event
-                  </Button>
-                </div>
-                <Button 
-                  className="bg-sfu-red hover:bg-sfu-red/90"
-                  disabled={!newPostText.trim()}
-                >
-                  <Send className="h-4 w-4 mr-2" /> Post
-                </Button>
-              </CardFooter>
-            </Card>
+            <CreatePostCard onPostCreated={handleNewPost} />
             
             {/* Filters */}
             <div className="mb-6">
@@ -235,6 +224,7 @@ const Newsfeed = () => {
                   <TabsTrigger value="all" className="flex-1">All Posts</TabsTrigger>
                   <TabsTrigger value="official" className="flex-1">Official</TabsTrigger>
                   <TabsTrigger value="events" className="flex-1">Events</TabsTrigger>
+                  <TabsTrigger value="media" className="flex-1">Media</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -242,105 +232,11 @@ const Newsfeed = () => {
             {/* Feed posts */}
             <div className="space-y-6">
               {filteredPosts.map(post => (
-                <Card key={post.id} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    {/* Post header */}
-                    <div className="p-4 flex justify-between items-start">
-                      <div className="flex items-start gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar} />
-                          <AvatarFallback>
-                            {post.author.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center">
-                            <p className="font-semibold">{post.author.name}</p>
-                            {post.isOfficial && (
-                              <span className="ml-2 bg-sfu-red text-white text-xs px-1.5 py-0.5 rounded-full">
-                                Official
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <span>@{post.author.username}</span>
-                            <span className="mx-1">•</span>
-                            <span>{format(post.timestamp, 'MMM d, h:mm a')}</span>
-                            {post.location && (
-                              <>
-                                <span className="mx-1">•</span>
-                                <MapPin className="h-3 w-3 mr-0.5" />
-                                <span>{post.location}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <BookmarkPlus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {/* Post content */}
-                    <div className="px-4 pb-4">
-                      <p className="whitespace-pre-line">{post.content}</p>
-                    </div>
-                    
-                    {/* Post images */}
-                    {post.images && post.images.length > 0 && (
-                      <div className="w-full">
-                        <img 
-                          src={post.images[0]} 
-                          alt="Post image" 
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Event details */}
-                    {post.event && (
-                      <div className="m-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-center">
-                          <Calendar className="h-5 w-5 mr-2 text-sfu-red" />
-                          <h4 className="font-medium">{post.event.title}</h4>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-600 ml-7">
-                          <p>{format(post.event.date, 'EEEE, MMMM d, yyyy • h:mm a')}</p>
-                          <p className="flex items-center mt-1">
-                            <MapPin className="h-3.5 w-3.5 mr-1" />
-                            {post.event.location}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Post stats */}
-                    <div className="px-4 py-2 border-t border-b flex justify-between text-xs text-gray-500">
-                      <span>{post.likes} likes</span>
-                      <div>
-                        <span>{post.comments} comments</span>
-                        <span className="mx-1">•</span>
-                        <span>{post.shares} shares</span>
-                      </div>
-                    </div>
-                    
-                    {/* Post actions */}
-                    <div className="grid grid-cols-3 divide-x">
-                      <Button variant="ghost" className="rounded-none py-2 h-auto">
-                        <ThumbsUp className="h-4 w-4 mr-2" />
-                        Like
-                      </Button>
-                      <Button variant="ghost" className="rounded-none py-2 h-auto">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Comment
-                      </Button>
-                      <Button variant="ghost" className="rounded-none py-2 h-auto">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PostCard 
+                  key={post.id} 
+                  post={post} 
+                  onDelete={handleDeletePost}
+                />
               ))}
             </div>
           </div>
@@ -371,7 +267,7 @@ const Newsfeed = () => {
               </div>
               
               <Button variant="outline" className="w-full mt-4">
-                <Calendar className="h-4 w-4 mr-2" />
+                <Filter className="h-4 w-4 mr-2" />
                 View All Events
               </Button>
               
