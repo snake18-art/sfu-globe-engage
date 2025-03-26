@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { PostCard, PostData } from "@/components/newsfeed/PostCard";
-import { CreatePostCard } from "@/components/newsfeed/CreatePostCard";
+import CreatePostCard from "@/components/newsfeed/CreatePostCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
+import { Filter, UserPlus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Sample trending topics
 const TRENDING_TOPICS = [
   "#FinalsWeek",
-  "#CampusEvents",
+  "#CampusEvents", 
   "#StudyTips",
   "#ScholarshipDeadlines",
   "#InternshipOpportunities"
